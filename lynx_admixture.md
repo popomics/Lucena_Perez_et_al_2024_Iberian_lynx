@@ -1,27 +1,25 @@
----
-title: "Iberian lynx admixture analyses"
-author: "Axel Barlow"
-date: "2023-10-31"
-output: rmarkdown::github_document
----
+Iberian lynx admixture analyses
+================
+Axel Barlow
+2023-10-31
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-library(dplyr)
-```
+This is a summary of the workflow for carrying out admixture analysis
+from Lucena-Perez et al. 2023. The starting point are bam files of *Lynx
+pardinus* and *Lynx lynx* data mapped to the domestic cat genome.
+Analyses are restricted to autosomal chromosomes. The following analyses
+are documented here:
 
-This is a summary of the workflow for carrying out admixture analysis from Lucena-Perez et al. 2023. The starting point are bam files of *Lynx pardinus* and *Lynx lynx* data mapped to the domestic cat genome. Analyses are restricted to autosomal chromosomes. The following analyses are documented here:
-
-1. Generation of Consensify sequences
-2. D statistic tests
-3. f-hat tests
-4. Phylogenetic test of gene flow direction
+1.  Generation of Consensify sequences
+2.  D statistic tests
+3.  f-hat tests
+4.  Phylogenetic test of gene flow direction
 
 ## 1. Generation of Consensify sequences
 
-First we carry out a depth analysis on each bam, to determine the integer read depth below the 95th percentile of depth
+First we carry out a depth analysis on each bam, to determine the
+integer read depth below the 95th percentile of depth
 
-```bash
+``` bash
 # run depth analysis in angsd with filters applied
 # you need a file "autosomes.txt" which is just the list of autosomal scaffolds in the reference
 angsd -i my_input.bam -doCounts 1 -doDepth 1 -minQ 30 -minMapQ 30 -rf autosomes.txt -out my_output
@@ -42,13 +40,13 @@ The integer read number below the 95th percentile of depth is:  9
 
 Now we can do allele counts in angsd
 
-```bash
+``` bash
 angsd -doCounts 1 -minQ 30 -minMapQ 30 -dumpCounts 3 -rf autosomes.txt -i my_input.bam -out my_counts
 ```
 
 Now we can compute the Consensify sequences
 
-```bash
+``` bash
 # clone repo from github
 git clone https://github.com/jlapaijmans/Consensify.git
 
@@ -61,9 +59,10 @@ perl Consensify_v0.1.pl my_counts.pos my_counts.counts scaffold_lengths.txt outp
 
 ## 2. D statistic tests
 
-We make use of the Admixture scripts from James Cahill. You need Consensify fastas from the 3 ingroup and an outgroup
+We make use of the Admixture scripts from James Cahill. You need
+Consensify fastas from the 3 ingroup and an outgroup
 
-```bash
+``` bash
 # clone repo from github
 git clone https://github.com/jacahill/Admixture.git
 
@@ -80,7 +79,7 @@ python weighted_block_jackknfie_D.py P1_P2_P3_OG.dstat 5000000
 
 The final Dstat results are here `./all_d_lynx.txt`. Plot like so:
 
-```{r, out.width = "80%", fig.width = 6, fig.height = 6, dpi = 300, echo = TRUE, fig.align = "center"}
+``` r
 # read in data
 d <- read.table("./all_d_lynx.txt", header=T)
 
@@ -89,9 +88,9 @@ par(mar=c(4,1,3,10), xpd=TRUE)
 
 #plotting D values
 plot(d$Dstat, jitter(d$comp, factor=0.5),
-	xlim=c(-0.15,0.3), ylim=c(10,0.5),
-	xlab="D value", ylab="", axes=F,
-	pch=21, cex=1, lwd=1, bg=ifelse(d$abs.z > 3, "red", "white")
+    xlim=c(-0.15,0.3), ylim=c(10,0.5),
+    xlab="D value", ylab="", axes=F,
+    pch=21, cex=1, lwd=1, bg=ifelse(d$abs.z > 3, "red", "white")
 )
 
 # axes
@@ -118,11 +117,14 @@ xpos=rep(c(0.3), each=10)
 text(xpos, ypos, labels=names, pos=4, offset=0, cex=0.8, font=1)
 ```
 
+<img src="lynx_admixture_files/figure-gfm/unnamed-chunk-1-1.png" width="80%" style="display: block; margin: auto;" />
+
 ## 3. f-hat tests
 
-We again make use of the Admixture scripts from James Cahill. You need Consensify fastas from 4 ingroup and an outgroup
+We again make use of the Admixture scripts from James Cahill. You need
+Consensify fastas from 4 ingroup and an outgroup
 
-```bash
+``` bash
 Fhat P1_Consensify.fa P2_Consensify.fa P3_Consensify.fa P4_Consensify.fa outgroup.fa 5000000 > P1_P2_P3_P4_OG.fhat
 
 # parse output to calculate D stat
@@ -132,9 +134,9 @@ python fhat_parser.py P1_P2_P3_P4_OG.fhat
 python weighted_block_jackknfie_fhat.py P1_P2_P3_P4_OG.fhat 5000000
 ```
 
-The final f-hat results are here `./*_parsed. Plot like so:
+The final f-hat results are here \`./\*\_parsed. Plot like so:
 
-```{r, out.width = "100%", fig.width = 8, fig.height = 4, dpi = 300, echo = TRUE, fig.align = "center"}
+``` r
 # read in data
 al <- read.table("./a_lp_al_1311_parsed", header=T)
 ca <- read.table("./a_lp_ca_1309_parsed", header=T)
@@ -145,18 +147,18 @@ par(mar=c(6,5,1,1))
 
 # plotting fhats
 plot(jitter(al$comp, factor=0.5), al$fhat,
-	xlim=c(1,30), ylim=c(0,0.03),
-	xlab="", ylab="Admix fraction",
-	axes=FALSE, frame.plot=TRUE,
-	pch=21, cex=0.8, lwd=0.1, bg="red"
+    xlim=c(1,30), ylim=c(0,0.03),
+    xlab="", ylab="Admix fraction",
+    axes=FALSE, frame.plot=TRUE,
+    pch=21, cex=0.8, lwd=0.1, bg="red"
 )
 
 points(jitter(ca$comp, factor=0.5), ca$fhat,
-	pch=21, cex=0.8, lwd=0.1, bg="blue"
+    pch=21, cex=0.8, lwd=0.1, bg="blue"
 )
 
 points(jitter(sm$comp, factor=0.5), sm$fhat,
-	pch=21, cex=0.8, lwd=0.1, bg="yellow"
+    pch=21, cex=0.8, lwd=0.1, bg="yellow"
 )
 
 # define sample names
@@ -198,11 +200,14 @@ axis(1, at=c(1:30), las=3, cex.axis=0.8, labels=names)
 axis(2, at=c(0, 0.01, 0.02, 0.03), las=1, cex.axis=0.8)
 ```
 
+<img src="lynx_admixture_files/figure-gfm/unnamed-chunk-2-1.png" width="100%" style="display: block; margin: auto;" />
+
 ## 4. Phylogenetic test of gene flow direction
 
-We make use of the treehaker script. You should read the accompanying documention and ensure required software is installed on your system
+We make use of the treehaker script. You should read the accompanying
+documention and ensure required software is installed on your system
 
-```bash
+``` bash
 # clone repo from github
 git clone https://github.com/jlapaijmans/treehacker.git
 
@@ -237,7 +242,7 @@ bash treehacker fastanames.txt my_output 100000
 
 The final results are here ./lynx30. Plot like so:
 
-```{r, out.width = "100%", fig.width = 8, fig.height = 3, dpi = 300, echo = TRUE, fig.align = "center"}
+``` r
 # I make use of the dplyr library to sum the topology classes informative on admixture and calculate ratios
 #library(dplyr)
 
@@ -253,12 +258,13 @@ par(mar=c(3,1,2,1))
 
 # plot
 plot(mytr$ll_into_lp, jitter(rep(1, 30)),
-	axes=FALSE, xlab="", ylab="",
-	ylim=c(0.9,1.15), xlim=c(-1,3),
-	pch=21, bg="salmon"
+    axes=FALSE, xlab="", ylab="",
+    ylim=c(0.9,1.15), xlim=c(-1,3),
+    pch=21, bg="salmon"
 )
 arrows(0,1.12,2,1.12, code="3", cex=0.8)
 points(1,1.12, pch=19, cex=1.2)
 axis(1, at=c(-1:3), labels=c("3x", "2x", "equal", "2x", "3x")) 
 ```
 
+<img src="lynx_admixture_files/figure-gfm/unnamed-chunk-3-1.png" width="100%" style="display: block; margin: auto;" />
